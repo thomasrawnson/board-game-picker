@@ -46,3 +46,34 @@ class BGGClient:
             return response.text
 
         raise RuntimeError("Unable to retrieve BGG collection")
+
+    def get_game(self, bgg_id: int) -> str:
+        url = f"{self.BASE_URL}/thing"
+
+        params = {
+            "id": bgg_id,
+            "stats": 1,
+        }
+
+        for attempt in range(self.max_retries):
+            response = httpx.get(
+                url,
+                params=params,
+                timeout=self.timeout,
+            )
+
+            if response.status_code == 202:
+                if attempt == self.max_retries - 1:
+                    raise RuntimeError(
+                        "BGG game request remained queued "
+                        "after maximum retries"
+                    )
+
+                time.sleep(self.retry_delay)
+                continue
+
+            response.raise_for_status()
+
+            return response.text
+
+        raise RuntimeError("Unable to retrieve BGG game")
