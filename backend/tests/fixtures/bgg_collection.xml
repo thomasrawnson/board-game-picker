@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items totalitems="2"
+       termsofuse="https://boardgamegeek.com/xmlapi/termsofuse"
+       pubdate="2026-08-20">
+
+    <item
+        objecttype="thing"
+        objectid="174430"
+        subtype="boardgame"
+        own="1">
+
+        <name sortindex="1"
+              value="Gloomhaven: Jaws of the Lion"/>
+
+        <yearpublished value="2020"/>
+
+        <stats
+            minplayers="1"
+            maxplayers="4"
+            minplaytime="30"
+            maxplaytime="120">
+
+            <rating value="8.4"/>
+
+        </stats>
+
+        <status own="1"/>
+
+    </item>
+
+    <item
+        objecttype="thing"
+        objectid="13"
+        subtype="boardgame"
+        own="1">
+
+        <name sortindex="1"
+              value="Catan"/>
+
+        <yearpublished value="1995"/>
+
+        <stats
+            minplayers="3"
+            maxplayers="4"
+            minplaytime="60"
+            maxplaytime="120">
+
+            <rating value="7.1"/>
+
+        </stats>
+
+        <status own="1"/>
+
+    </item>
+
+</items>
