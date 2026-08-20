@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
+
+    <item type="boardgame" id="174430">
+
+        <name type="primary"
+              sortindex="1"
+              value="Gloomhaven: Jaws of the Lion"/>
+
+        <yearpublished value="2020"/>
+
+        <minplayers value="1"/>
+        <maxplayers value="4"/>
+
+        <minplaytime value="30"/>
+        <maxplaytime value="120"/>
+        <playingtime value="120"/>
+
+        <image>
+            https://example.com/gloomhaven.jpg
+        </image>
+
+        <thumbnail>
+            https://example.com/gloomhaven-thumb.jpg
+        </thumbnail>
+
+        <link type="boardgamecategory"
+              id="1022"
+              value="Adventure"/>
+
+        <link type="boardgamemechanic"
+              id="2001"
+              value="Cooperative Game"/>
+
+        <link type="boardgamemechanic"
+              id="2078"
+              value="Campaign / Battle Card Driven"/>
+
+        <statistics>
+            <ratings>
+
+                <average value="8.40"/>
+
+                <averageweight value="3.85"/>
+
+            </ratings>
+        </statistics>
+
+    </item>
+
+</items>

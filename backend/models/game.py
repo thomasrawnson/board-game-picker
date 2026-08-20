@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 class Game:
     bgg_id: int
     name: str
+
     year_published: int | None = None
 
     min_players: int | None = None
@@ -17,6 +18,9 @@ class Game:
     rating: float | None = None
 
     owned: bool = False
+
+    image_url: str | None = None
+    thumbnail_url: str | None = None
 
     categories: list[str] = field(default_factory=list)
     mechanics: list[str] = field(default_factory=list)
