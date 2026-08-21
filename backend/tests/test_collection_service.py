@@ -79,3 +79,53 @@ def test_sync_game_updates_existing_game():
 
     assert game.bgg_id == 174430
     assert game.name == "Gloomhaven"
+
+def test_sync_collection():
+    collection_xml = """
+    <items>
+        <item objectid="174430"/>
+        <item objectid="167791"/>
+    </items>
+    """
+
+    game_xml = """
+    <items>
+        <item type="boardgame" id="174430">
+            <name type="primary" value="Gloomhaven"/>
+            <statistics>
+                <ratings>
+                    <average value="8.5"/>
+                    <averageweight value="3.8"/>
+                </ratings>
+            </statistics>
+        </item>
+    </items>
+    """
+
+    class FakeBGGClient:
+        def get_collection(self, username):
+            return collection_xml
+
+        def get_game(self, bgg_id):
+            return game_xml.replace(
+                'id="174430"',
+                f'id="{bgg_id}"',
+            )
+
+    class FakeRepository:
+        def get_by_bgg_id(self, bgg_id):
+            return None
+
+        def create(self, game):
+            return game
+
+    service = CollectionService(
+        FakeBGGClient(),
+        FakeRepository(),
+    )
+
+    games = service.sync_collection("tom")
+
+    assert len(games) == 2
+    assert games[0].bgg_id == 174430
+    assert games[1].bgg_id == 167791
