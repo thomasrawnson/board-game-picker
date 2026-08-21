@@ -1,0 +1,46 @@
+from pathlib import Path
+from bgg.game_parser import parse_game_metadata
+
+
+FIXTURE = (
+    Path(__file__).parent
+    / "fixtures"
+    / "bgg_thing.xml"
+)
+
+
+def test_parse_game_metadata():
+
+    xml = FIXTURE.read_text(encoding="utf-8")
+
+    game = parse_game_metadata(xml)
+
+    assert game.bgg_id == 174430
+
+    assert game.name == "Gloomhaven: Jaws of the Lion"
+
+    assert game.year_published == 2020
+
+    assert game.min_players == 1
+    assert game.max_players == 4
+
+    assert game.min_play_time == 30
+    assert game.max_play_time == 120
+
+    assert game.rating == 8.4
+    assert game.complexity == 3.85
+
+    assert game.image_url == "https://example.com/gloomhaven.jpg"
+
+    assert "Adventure" in game.categories
+
+    assert "Cooperative Game" in game.mechanics
+
+
+def test_multiple_mechanics_are_parsed():
+
+    xml = FIXTURE.read_text(encoding="utf-8")
+
+    game = parse_game_metadata(xml)
+
+    assert len(game.mechanics) == 2
