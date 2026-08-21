@@ -19,6 +19,18 @@ class GameRepository:
             return None
 
         return self._to_domain(database_game)
+    
+    def get_all(self) -> list[DomainGame]:
+        database_games = (
+            self.db.query(DatabaseGame)
+            .order_by(DatabaseGame.name)
+            .all()
+        )
+
+        return [
+            self._to_domain(game)
+            for game in database_games
+        ]
 
     def create(self, game: DomainGame) -> DomainGame:
         database_game = DatabaseGame(

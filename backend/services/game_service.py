@@ -17,3 +17,6 @@ class GameService:
 
     def delete_game(self, bgg_id: int) -> bool:
         return self.repository.delete(bgg_id)
+    
+    def get_games(self) -> list[Game]:
+        return self.repository.get_all()
