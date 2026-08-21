@@ -38,6 +38,44 @@ class GameRepository:
 
         return self._to_domain(database_game)
 
+    def update(self, game: DomainGame) -> DomainGame | None:
+        database_game = (
+            self.db.query(DatabaseGame)
+            .filter(DatabaseGame.bgg_id == game.bgg_id)
+            .first()
+        )
+
+        if database_game is None:
+            return None
+
+        database_game.name = game.name
+        database_game.year_published = game.year_published
+        database_game.min_players = game.min_players
+        database_game.max_players = game.max_players
+        database_game.rating = game.rating
+        database_game.complexity = game.complexity
+        database_game.thumbnail = game.thumbnail_url
+
+        self.db.commit()
+        self.db.refresh(database_game)
+
+        return self._to_domain(database_game)
+
+    def delete(self, bgg_id: int) -> bool:
+        database_game = (
+            self.db.query(DatabaseGame)
+            .filter(DatabaseGame.bgg_id == bgg_id)
+            .first()
+        )
+
+        if database_game is None:
+            return False
+
+        self.db.delete(database_game)
+        self.db.commit()
+
+        return True
+
     @staticmethod
     def _to_domain(database_game: DatabaseGame) -> DomainGame:
         return DomainGame(
