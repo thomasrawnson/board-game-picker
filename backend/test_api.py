@@ -38,6 +38,7 @@ def test_get_game_returns_game():
     finally:
         app.dependency_overrides.clear()
 
+
 def test_get_missing_game_returns_404():
     class FakeGameService:
         def get_game(self, bgg_id: int):
@@ -47,13 +48,80 @@ def test_get_missing_game_returns_404():
         lambda: FakeGameService()
     )
 
-    client = TestClient(app)
+    try:
+        client = TestClient(app)
 
-    response = client.get("/games/999999")
+        response = client.get("/games/999999")
 
-    assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Game not found"
-    }
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "Game not found"
+        }
 
-    app.dependency_overrides.clear()
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_game():
+    class FakeGameService:
+        def create_game(self, game):
+            return game
+
+    app.dependency_overrides[get_game_service] = (
+        lambda: FakeGameService()
+    )
+
+    try:
+        client = TestClient(app)
+
+        response = client.post(
+            "/games",
+            json={
+                "bgg_id": 999999,
+                "name": "Test Game",
+                "year_published": 2026,
+                "min_players": 2,
+                "max_players": 4,
+                "rating": 8.0,
+                "complexity": 2.5,
+            },
+        )
+
+        assert response.status_code == 201
+
+        data = response.json()
+
+        assert data["bgg_id"] == 999999
+        assert data["name"] == "Test Game"
+        assert data["min_players"] == 2
+        assert data["max_players"] == 4
+
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_game_rejects_invalid_rating():
+    class FakeGameService:
+        def create_game(self, game):
+            return game
+
+    app.dependency_overrides[get_game_service] = (
+        lambda: FakeGameService()
+    )
+
+    try:
+        client = TestClient(app)
+
+        response = client.post(
+            "/games",
+            json={
+                "bgg_id": 999999,
+                "name": "Test Game",
+                "rating": 15,
+            },
+        )
+
+        assert response.status_code == 422
+
+    finally:
+        app.dependency_overrides.clear()
