@@ -1,0 +1,39 @@
+{
+  "games": [
+    {
+      "bggId": 167791,
+      "bggName": "Terraforming Mars",
+      "bggYear": 2016,
+      "copies": [
+        {
+          "statusOwned": 1
+        }
+      ],
+      "maxPlayerCount": 5,
+      "maxPlayTime": 120,
+      "minPlayerCount": 1,
+      "minPlayTime": 120,
+      "name": "Terraforming Mars",
+      "urlImage": "https://example.com/terraforming-mars.jpg",
+      "urlThumb": "https://example.com/terraforming-mars-thumb.jpg"
+    },
+    {
+      "bggId": 316554,
+      "bggName": "Dune: Imperium",
+      "bggYear": 2020,
+      "copies": [
+        {
+          "statusOwned": 0,
+          "statusPrevOwned": 1
+        }
+      ],
+      "maxPlayerCount": 4,
+      "maxPlayTime": 120,
+      "minPlayerCount": 1,
+      "minPlayTime": 60,
+      "name": "Dune: Imperium",
+      "urlImage": "https://example.com/dune.jpg",
+      "urlThumb": "https://example.com/dune-thumb.jpg"
+    }
+  ]
+}
