@@ -9,6 +9,9 @@ class GameService:
     def get_game(self, bgg_id: int) -> Game | None:
         return self.repository.get_by_bgg_id(bgg_id)
 
+    def get_games(self) -> list[Game]:
+        return self.repository.get_all()
+
     def create_game(self, game: Game) -> Game:
         return self.repository.create(game)
 
@@ -17,6 +20,3 @@ class GameService:
 
     def delete_game(self, bgg_id: int) -> bool:
         return self.repository.delete(bgg_id)
-    
-    def get_games(self) -> list[Game]:
-        return self.repository.get_all()

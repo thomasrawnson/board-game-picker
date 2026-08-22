@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
-
-from api.main import app, get_game_service
+from services.collection_service import CollectionService
 from models.game import Game
+from api.main import app, get_collection_service, get_game_service
 
+client = TestClient(app)
 
 def test_get_game_returns_game():
     class FakeGameService:
@@ -248,6 +249,30 @@ def test_delete_missing_game_returns_404():
         response = client.delete("/games/999999")
 
         assert response.status_code == 404
+
+    finally:
+        app.dependency_overrides.clear()
+
+def test_sync_collection():
+    class FakeCollectionService:
+        def sync_collection(self, username):
+            return [
+                Game(bgg_id=174430, name="Gloomhaven"),
+                Game(bgg_id=167791, name="Terraforming Mars"),
+            ]
+
+    app.dependency_overrides[get_collection_service] = (
+        lambda: FakeCollectionService()
+    )
+
+    try:
+        response = client.post("/collections/tom/sync")
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "username": "tom",
+            "games_synced": 2,
+        }
 
     finally:
         app.dependency_overrides.clear()

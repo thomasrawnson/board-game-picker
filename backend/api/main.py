@@ -1,12 +1,12 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
-
+from bgg.client import BGGClient
 from api.schemas.game import GameCreate
 from database.connection import get_db
 from models.game import Game
 from repositories.game_repository import GameRepository
 from services.game_service import GameService
-
+from services.collection_service import CollectionService
 
 app = FastAPI(
     title="BoardGamePicker API",
@@ -14,6 +14,27 @@ app = FastAPI(
 )
 
 
+def get_collection_service(
+    db: Session = Depends(get_db),
+) -> CollectionService:
+    return CollectionService(
+        bgg_client=BGGClient(),
+        repository=GameRepository(db),
+    )
+
+
+@app.post("/collections/{username}/sync")
+def sync_collection(
+    username: str,
+    service: CollectionService = Depends(get_collection_service),
+):
+    games = service.sync_collection(username)
+
+    return {
+        "username": username,
+        "games_synced": len(games),
+    }
+    
 def get_game_service(
     db: Session = Depends(get_db),
 ) -> GameService:
