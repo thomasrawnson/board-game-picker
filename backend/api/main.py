@@ -8,6 +8,7 @@ from repositories.game_repository import GameRepository
 from services.game_service import GameService
 from services.collection_service import CollectionService
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from services.picker_service import PickerCriteria, PickerService
 
@@ -16,6 +17,16 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_collection_service(
     db: Session = Depends(get_db),
