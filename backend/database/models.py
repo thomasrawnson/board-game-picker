@@ -1,8 +1,17 @@
-from sqlalchemy import Boolean, Float, Integer, String
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.connection import Base
-
 
 class Game(Base):
     __tablename__ = "games"
@@ -42,3 +51,28 @@ class Game(Base):
 
     image_url: Mapped[str | None] = mapped_column(String(500))
     thumbnail_url: Mapped[str | None] = mapped_column(String(500))
+
+class Play(Base):
+    __tablename__ = "plays"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+    )
+
+    game_id: Mapped[int] = mapped_column(
+        ForeignKey("games.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    player_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    played_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )

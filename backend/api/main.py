@@ -7,10 +7,13 @@ from models.game import Game
 from repositories.game_repository import GameRepository
 from services.game_service import GameService
 from services.collection_service import CollectionService
+from services.play_service import PlayService
+from services.picker_service import PickerCriteria, PickerService
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from api.schemas.play import PlayCreate
+from repositories.play_repository import PlayRepository
 
-from services.picker_service import PickerCriteria, PickerService
 
 app = FastAPI(
     title="BoardGamePicker API",
@@ -187,3 +190,27 @@ def pick_games(
         }
         for match in matches[:limit]
     ]
+
+def get_play_service(
+    db: Session = Depends(get_db),
+) -> PlayService:
+    repository = PlayRepository(db)
+    return PlayService(repository)
+
+@app.post("/plays", status_code=201)
+def record_play(
+    play_data: PlayCreate,
+    service: PlayService = Depends(get_play_service),
+):
+    play = service.record_play(
+        bgg_id=play_data.bgg_id,
+        player_count=play_data.player_count,
+    )
+
+    if play is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Game not found",
+        )
+
+    return play

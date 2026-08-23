@@ -2,6 +2,15 @@ from fastapi.testclient import TestClient
 from services.collection_service import CollectionService
 from models.game import Game
 from api.main import app, get_collection_service, get_game_service
+from datetime import datetime, timezone
+
+from api.main import (
+    app,
+    get_collection_service,
+    get_game_service,
+    get_play_service,
+)
+from models.play import Play
 
 client = TestClient(app)
 
@@ -344,3 +353,68 @@ def test_picker_requires_valid_player_count():
     )
 
     assert response.status_code == 422
+
+def test_record_play():
+    class FakePlayService:
+        def record_play(
+            self,
+            bgg_id: int,
+            player_count: int,
+        ):
+            return Play(
+                id=1,
+                bgg_id=bgg_id,
+                player_count=player_count,
+                played_at=datetime.now(timezone.utc),
+            )
+
+    app.dependency_overrides[get_play_service] = (
+        lambda: FakePlayService()
+    )
+
+    try:
+        response = client.post(
+            "/plays",
+            json={
+                "bgg_id": 167791,
+                "player_count": 2,
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["bgg_id"] == 167791
+    assert data["player_count"] == 2
+    assert data["id"] == 1
+
+
+def test_record_play_returns_404_for_unknown_game():
+    class FakePlayService:
+        def record_play(
+            self,
+            bgg_id: int,
+            player_count: int,
+        ):
+            return None
+
+    app.dependency_overrides[get_play_service] = (
+        lambda: FakePlayService()
+    )
+
+    try:
+        response = client.post(
+            "/plays",
+            json={
+                "bgg_id": 999999999,
+                "player_count": 2,
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Game not found"
