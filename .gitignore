@@ -22,3 +22,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Private Board Game Stats export
+data/BGStatsExport.json
