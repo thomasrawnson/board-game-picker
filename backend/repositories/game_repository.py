@@ -19,7 +19,7 @@ class GameRepository:
             return None
 
         return self._to_domain(database_game)
-    
+
     def get_all(self) -> list[DomainGame]:
         database_games = (
             self.db.query(DatabaseGame)
@@ -39,9 +39,13 @@ class GameRepository:
             year_published=game.year_published,
             min_players=game.min_players,
             max_players=game.max_players,
-            rating=game.rating,
+            min_play_time=game.min_play_time,
+            max_play_time=game.max_play_time,
             complexity=game.complexity,
-            thumbnail=game.thumbnail_url,
+            rating=game.rating,
+            owned=game.owned,
+            image_url=game.image_url,
+            thumbnail_url=game.thumbnail_url,
         )
 
         self.db.add(database_game)
@@ -64,9 +68,13 @@ class GameRepository:
         database_game.year_published = game.year_published
         database_game.min_players = game.min_players
         database_game.max_players = game.max_players
-        database_game.rating = game.rating
+        database_game.min_play_time = game.min_play_time
+        database_game.max_play_time = game.max_play_time
         database_game.complexity = game.complexity
-        database_game.thumbnail = game.thumbnail_url
+        database_game.rating = game.rating
+        database_game.owned = game.owned
+        database_game.image_url = game.image_url
+        database_game.thumbnail_url = game.thumbnail_url
 
         self.db.commit()
         self.db.refresh(database_game)
@@ -96,7 +104,11 @@ class GameRepository:
             year_published=database_game.year_published,
             min_players=database_game.min_players,
             max_players=database_game.max_players,
-            rating=database_game.rating,
+            min_play_time=database_game.min_play_time,
+            max_play_time=database_game.max_play_time,
             complexity=database_game.complexity,
-            thumbnail_url=database_game.thumbnail,
+            rating=database_game.rating,
+            owned=database_game.owned,
+            image_url=database_game.image_url,
+            thumbnail_url=database_game.thumbnail_url,
         )
