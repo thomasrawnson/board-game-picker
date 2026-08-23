@@ -276,3 +276,71 @@ def test_sync_collection():
 
     finally:
         app.dependency_overrides.clear()
+
+def test_picker_returns_ranked_matches():
+    class FakeGameService:
+        def get_games(self):
+            return [
+                Game(
+                    bgg_id=1,
+                    name="Short Game",
+                    min_players=2,
+                    max_players=4,
+                    max_play_time=30,
+                    complexity=2.0,
+                    owned=True,
+                ),
+                Game(
+                    bgg_id=2,
+                    name="Best Match",
+                    min_players=2,
+                    max_players=4,
+                    max_play_time=55,
+                    complexity=2.8,
+                    owned=True,
+                ),
+                Game(
+                    bgg_id=3,
+                    name="Too Long",
+                    min_players=2,
+                    max_players=4,
+                    max_play_time=180,
+                    complexity=2.5,
+                    owned=True,
+                ),
+            ]
+
+    app.dependency_overrides[get_game_service] = lambda: FakeGameService()
+
+    try:
+        response = client.get(
+            "/picker",
+            params={
+                "players": 2,
+                "max_play_time": 60,
+                "max_complexity": 3.0,
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 2
+    assert data[0]["game"]["bgg_id"] == 2
+    assert data[0]["game"]["name"] == "Best Match"
+    assert data[0]["score"] > data[1]["score"]
+    assert "Supports 2 players" in data[0]["reasons"]
+
+
+def test_picker_requires_valid_player_count():
+    response = client.get(
+        "/picker",
+        params={
+            "players": 0,
+        },
+    )
+
+    assert response.status_code == 422

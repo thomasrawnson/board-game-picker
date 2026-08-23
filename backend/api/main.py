@@ -7,6 +7,9 @@ from models.game import Game
 from repositories.game_repository import GameRepository
 from services.game_service import GameService
 from services.collection_service import CollectionService
+from fastapi import Depends, FastAPI, HTTPException, Query
+
+from services.picker_service import PickerCriteria, PickerService
 
 app = FastAPI(
     title="BoardGamePicker API",
@@ -143,3 +146,33 @@ def delete_game(
     return {
         "message": "Game deleted"
     }
+
+@app.get("/picker")
+def pick_games(
+    players: int = Query(..., ge=1),
+    max_play_time: int | None = Query(None, ge=1),
+    max_complexity: float | None = Query(None, ge=0),
+    limit: int = Query(10, ge=1, le=50),
+    game_service: GameService = Depends(get_game_service),
+):
+    games = game_service.get_games()
+
+    picker_service = PickerService()
+
+    matches = picker_service.rank_matches(
+        games,
+        PickerCriteria(
+            players=players,
+            max_play_time=max_play_time,
+            max_complexity=max_complexity,
+        ),
+    )
+
+    return [
+        {
+            "game": match.game,
+            "score": match.score,
+            "reasons": match.reasons,
+        }
+        for match in matches[:limit]
+    ]
