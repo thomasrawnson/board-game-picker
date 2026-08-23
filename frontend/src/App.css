@@ -688,3 +688,14 @@ button:focus-visible {
     box-shadow: none;
   }
 }
+
+.play-confirmation {
+  margin: 12px 0 0;
+
+  color: var(--gold);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-align: center;
+}

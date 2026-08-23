@@ -53,3 +53,37 @@ export async function getPickerMatches(
 
   return response.json()
 }
+
+export interface Play {
+  id: number
+  bgg_id: number
+  player_count: number
+  played_at: string
+}
+
+export async function recordPlay(
+  bggId: number,
+  playerCount: number,
+): Promise<Play> {
+  const response = await fetch(
+    `${API_BASE_URL}/plays`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bgg_id: bggId,
+        player_count: playerCount,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      `Play request failed: ${response.status}`,
+    )
+  }
+
+  return response.json()
+}

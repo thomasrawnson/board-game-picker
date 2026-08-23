@@ -1,6 +1,7 @@
 import { useState } from "react"
 import {
   getPickerMatches,
+  recordPlay,
   type PickerMatch,
 } from "./api/client"
 
@@ -46,6 +47,10 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  const [savingPlay, setSavingPlay] = useState(false)
+  const [playRecorded, setPlayRecorded] = useState(false)
+  const [playError, setPlayError] = useState("")
+
   async function revealGame() {
     if (players === null) {
       return
@@ -81,15 +86,45 @@ function App() {
     }
   }
 
-  function tryAnother() {
-    if (matches.length === 0) {
+  async function handlePlayThis() {
+    if (!match || players === null) {
       return
     }
 
-    setMatchIndex(
-      (current) => (current + 1) % matches.length,
-    )
+    setSavingPlay(true)
+    setPlayError("")
+
+    try {
+      await recordPlay(
+        match.game.bgg_id,
+        players,
+      )
+
+      setPlayRecorded(true)
+    } catch (err) {
+      console.error(err)
+
+      setPlayError(
+        "Couldn't record this play. Please try again.",
+      )
+    } finally {
+      setSavingPlay(false)
+    }
   }
+
+
+function tryAnother() {
+  if (matches.length === 0) {
+    return
+  }
+
+  setPlayRecorded(false)
+  setPlayError("")
+
+  setMatchIndex(
+    (current) => (current + 1) % matches.length,
+  )
+}
 
   const match = matches[matchIndex]
 
@@ -284,8 +319,16 @@ function App() {
                 Try another
               </button>
 
-              <button className="primary-button">
-                Play this
+              <button
+                className="primary-button"
+                onClick={handlePlayThis}
+                disabled={savingPlay || playRecorded}
+              >
+                {savingPlay
+                  ? "Recording..."
+                  : playRecorded
+                    ? "Play recorded"
+                    : "Play this"}
               </button>
             </div>
 
