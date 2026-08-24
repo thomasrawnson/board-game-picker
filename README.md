@@ -1,95 +1,157 @@
 # Board Game Picker
 
-> **Work in progress** — a mobile-first board game recommendation application and data-engineering portfolio project.
+Board Game Picker is a mobile-first application for answering a familiar game-night question: **what should we play?**
 
-Board Game Picker is being built to answer a familiar game-night problem: **what should we play?**
+The application imports a board game collection, stores game and play-history data in PostgreSQL, and recommends suitable games based on player count, available play time, complexity and recent play history.
 
-The application imports a board game collection, stores and enriches game metadata, and will recommend suitable games based on factors such as player count, available play time, complexity and user preferences.
-
-The project is also designed as a practical portfolio project demonstrating Python, data ingestion, API development, relational modelling, automated testing, containerisation and cloud deployment.
+It is also being developed as a data-engineering portfolio project, with an emphasis on ingestion, transformation, relational modelling, API design, testing and explainable recommendation logic.
 
 ## Current progress
 
-The backend foundation and collection ingestion flow are under active development.
+Board Game Picker now has a working end-to-end application flow covering collection ingestion, recommendation, play tracking and collection analytics.
 
 Currently implemented:
 
-- React + TypeScript frontend foundation using Vite
+- React + TypeScript mobile-first frontend
+- installable PWA support
 - Python/FastAPI backend
+- PostgreSQL 16 local development environment using Docker Compose
+- SQLAlchemy persistence layer
+- Alembic database migrations
+- layered API, service and repository architecture
 - BoardGameGeek XML API client and parsers
-- Retry handling for queued BGG API responses
-- Domain `Game` model
-- PostgreSQL local development environment using Docker Compose
-- SQLAlchemy database integration
-- Repository CRUD operations
-- Service layer separating business logic from persistence
-- FastAPI game endpoints with Pydantic validation
-- Collection sync API endpoint
-- Automated tests using pytest, fixtures and dependency overrides
-- BG Stats JSON collection parser
-- BG Stats collection import into PostgreSQL
-- Idempotent create/update behaviour when importing an existing collection
+- retry handling for queued BoardGameGeek API responses
+- BG Stats JSON collection ingestion
+- BG Stats historical play ingestion
+- idempotent play import using source identifiers
+- game metadata including player counts, play time, complexity, ratings and artwork
+- deterministic and explainable recommendation engine
+- player-count and play-time filtering
+- recommendation scoring informed by historical play recency
+- game reveal interface using real BoardGameGeek artwork
+- play-history recording from the frontend
+- collection-insights API and React dashboard
+- PostgreSQL aggregate queries for most played, last played and never played games
+- automated tests across parsers, repositories, services and API endpoints
 
-A live BoardGameGeek collection sync is planned once API token access is available. In the meantime, development uses a Board Game Stats JSON export as an additional ingestion source.
+Development currently uses a BG Stats export as the primary source for collection and historical play data. BoardGameGeek integration is also available for collection and metadata synchronisation.
 
 ## Architecture
 
 ```text
-React / TypeScript
-        |
-        v
-     FastAPI
-        |
-        v
- Application services
-    /          \
-   v            v
-BGG / BG Stats  Repository
+React / TypeScript PWA
+          |
+          v
+       FastAPI
+          |
+          v
+  Application services
+      /        \
+     v          v
+BGG / BG Stats  Repositories
                     |
                     v
                 PostgreSQL
 ```
 
-The backend uses a layered architecture so external APIs, application logic and database persistence remain separated.
+The backend uses a layered architecture so external clients, application logic and persistence remain separated.
 
 ```text
 API
  |
 Service
  |
-Repository / External clients
+Repository / External client
  |
-PostgreSQL / BoardGameGeek
+PostgreSQL / BoardGameGeek / BG Stats
 ```
 
-This allows components to be tested independently and means application logic does not need to know the details of SQLAlchemy or the external data source.
+This keeps business logic independent of transport and persistence details and allows individual layers to be tested in isolation.
 
 ## Data ingestion
 
-The application currently supports two collection-data paths:
+The application supports both BoardGameGeek XML and BG Stats JSON data flows.
 
 ```text
-BoardGameGeek XML API ----> BGG parser -----\
-                                           > Domain Game model
-BG Stats JSON export ------> JSON parser ---/
-                                                   |
-                                                   v
-                                             Import service
-                                                   |
-                                                   v
-                                               Repository
-                                                   |
-                                                   v
-                                              PostgreSQL
+BoardGameGeek XML API ----> BGG parser --------\
+                                               > Domain Game model
+BG Stats JSON export ------> Collection parser /
+                                                      |
+                                                      v
+                                                Import service
+                                                      |
+                                                      v
+                                                  Repository
+                                                      |
+                                                      v
+                                                 PostgreSQL
 ```
 
-The BG Stats importer filters the export to currently owned games and uses the BGG ID as the stable game identifier. Re-importing the same collection updates existing records instead of creating duplicates.
+Historical play data is imported separately from the same BG Stats export:
+
+```text
+BG Stats plays
+      |
+      v
+Resolve gameRefId to BGG ID
+      |
+      v
+Parse play date, players and duration
+      |
+      v
+Deduplicate by source + play UUID
+      |
+      v
+PostgreSQL plays table
+```
+
+The collection importer filters the export to currently owned games and uses the BGG ID as the stable game identifier. Re-importing collection data updates existing records instead of creating duplicates.
+
+Historical plays are also idempotent: imported play UUIDs are stored with their source so repeated imports do not duplicate play records.
+
+## Recommendation engine
+
+The recommendation engine is deterministic and explainable rather than AI-driven.
+
+Games are first filtered for eligibility using criteria such as:
+
+- player count
+- maximum play time
+- maximum complexity
+- ownership status
+
+Eligible games are then ranked using a weighted score. Current scoring considers suitability against the selected criteria and historical play recency, allowing games that have not been played recently to rank above otherwise similar choices.
+
+The API returns both the score and human-readable reasons so the frontend can explain why a game was recommended.
+
+Example reasons include:
+
+- `Supports 3 players`
+- `Fits within 60 minutes`
+- `Complexity 2.8 fits preference`
+- `Hasn't been played in a while`
+
+Play-history scoring will continue to be refined as the project develops.
+
+## Collection insights
+
+The application includes collection analytics backed by PostgreSQL aggregate queries.
+
+Current insights include:
+
+- total owned games
+- total recorded plays
+- most played games
+- last played game
+- games that have never been played
+
+Historical BG Stats plays feed the same database used by the picker, so analytics and recommendations operate from a shared source of truth.
 
 ## Technology stack
 
 ### Backend
 
-- **Python 3.12** — application, ingestion and data-processing logic
+- **Python 3.12** — application, ingestion and transformation logic
 - **FastAPI** — REST API and dependency injection
 - **Pydantic** — request validation
 - **SQLAlchemy** — ORM, sessions and database access
@@ -97,9 +159,10 @@ The BG Stats importer filters the export to currently owned games and uses the B
 - **httpx** — BoardGameGeek HTTP client
 - **pytest** — unit and integration testing
 
-### Database & infrastructure
+### Database and infrastructure
 
 - **PostgreSQL 16** — relational application database
+- **Alembic** — version-controlled schema migrations
 - **Docker / Docker Compose** — reproducible local database environment
 
 ### Frontend
@@ -107,37 +170,48 @@ The BG Stats importer filters the export to currently owned games and uses the B
 - **React**
 - **TypeScript**
 - **Vite**
+- **vite-plugin-pwa** — installable mobile web application support
 
-### Planned
+### Planned / next
 
-- Alembic database migrations
 - GitHub Actions CI/CD
 - Azure deployment
-- Recommendation/scoring engine
-- Play history and collection statistics
+- category and mechanic persistence
+- similar-game discovery
+- personal ranking
+- richer recommendation scoring
 - AI-assisted natural-language game filtering
 
 ## Testing
 
-Testing is being added alongside each milestone rather than left until the end of the project.
+Testing is developed alongside each milestone rather than added at the end of the project.
 
 The test suite covers areas including:
 
-- BGG HTTP client behaviour
+- BoardGameGeek HTTP client behaviour
 - XML parsing
 - BG Stats JSON parsing
+- historical play parsing
 - collection processing
 - PostgreSQL connectivity
 - repository CRUD operations
 - service-layer behaviour
+- recommendation scoring
+- collection insights
 - FastAPI endpoints
 
-External dependencies are replaced with fakes/mocks where appropriate so individual application layers can be tested independently.
+External dependencies are replaced with fakes, mocks or dependency overrides where appropriate so individual application layers can be tested independently.
 
 Run the backend tests from `backend`:
 
 ```bash
 python -m pytest
+```
+
+Check that SQLAlchemy models and Alembic migrations remain aligned:
+
+```bash
+alembic check
 ```
 
 ## Local development
@@ -147,7 +221,6 @@ python -m pytest
 - Python 3.12+
 - Node.js
 - Docker Desktop / Docker Compose
-- PostgreSQL runs through the provided Docker Compose configuration
 
 ### Database
 
@@ -155,6 +228,12 @@ Start PostgreSQL from the repository root:
 
 ```bash
 docker compose up -d
+```
+
+Apply database migrations from `backend`:
+
+```bash
+alembic upgrade head
 ```
 
 The backend uses a `DATABASE_URL` environment variable. Local secrets and personal collection exports are intentionally excluded from source control.
@@ -167,7 +246,13 @@ From `backend` with the virtual environment activated:
 uvicorn api.main:app --reload
 ```
 
-FastAPI's interactive API documentation is then available at `/docs` on the local API server.
+FastAPI's interactive API documentation is available at `/docs` on the local API server.
+
+For local testing from another device on the same network, the API can be exposed on the local network:
+
+```bash
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
 
 ### Frontend
 
@@ -178,63 +263,59 @@ npm install
 npm run dev
 ```
 
+For local mobile testing:
+
+```bash
+npm run dev -- --host
+```
+
+The frontend API URL can be configured using the `VITE_API_BASE_URL` environment variable.
+
+Build the frontend with:
+
+```bash
+npm run build
+```
+
 ## Roadmap
 
 Near-term development priorities are:
 
-1. Expand the PostgreSQL game schema to retain richer collection metadata
-2. Introduce Alembic migrations for version-controlled schema changes
-3. Complete resilient collection synchronisation and error handling
-4. Model collections, categories and mechanics
-5. Build the game picker and explainable recommendation score
-6. Develop the mobile-first tabletop UI
-7. Add play history, rankings and collection statistics
-8. Add similar-game discovery
-9. Add CI/CD and observability
-10. Deploy the application to Azure
-
-## Recommendation concept
-
-The first recommendation engine will be deterministic and explainable rather than AI-driven.
-
-Potential inputs include:
-
-- player count
-- available play time
-- complexity
-- category/mechanic preferences
-- game rating
-- user ranking
-- recent play history
-- variety
-
-The UI will expose this as a match score, for example **92% MATCH**, with the ability to explain why a game was recommended.
-
-AI may later be used to translate natural-language requests such as:
-
-> Four of us have about 90 minutes and want something competitive but not too heavy.
-
-into structured filters consumed by the normal recommendation engine.
+1. Refine play-history-aware recommendation scoring
+2. Persist categories and mechanics
+3. Expand collection insights and play-history analytics
+4. Add personal ranking and preference signals
+5. Add similar-game discovery
+6. Improve frontend component structure and mobile UX
+7. Add GitHub Actions CI/CD
+8. Add production configuration and observability
+9. Deploy the frontend, API and database infrastructure to Azure
+10. Explore AI-assisted natural-language filtering
 
 ## Project goals
 
-Beyond producing a useful application, this project is intended to demonstrate:
+The project is intended to demonstrate practical experience with:
 
-- external API ingestion
-- transformation of XML/JSON into consistent domain models
+- external API and file-based data ingestion
+- XML and JSON parsing
+- transformation into consistent domain models
 - idempotent data loading
+- source identifier mapping and deduplication
 - relational data modelling
-- PostgreSQL and SQL
+- PostgreSQL and SQL aggregation
+- schema migration management
 - Python application architecture
-- API design
-- testing strategy
+- REST API design
+- automated testing
 - Docker-based development
-- CI/CD
-- cloud deployment
 - explainable recommendation logic
+- React and TypeScript frontend integration
+- CI/CD and cloud deployment as later milestones
 
 ## Status
 
-🚧 **Active development**
+**Active development**
 
-The architecture and data layer are currently the main focus. The README will evolve alongside the project as the picker UI, recommendation engine, CI/CD and cloud deployment are completed.
+The core application is functional end to end: collection ingestion, PostgreSQL persistence, recommendation, play tracking and collection insights are implemented.
+
+Current development is focused on improving recommendation quality, strengthening the mobile experience, and preparing the project for CI/CD and Azure deployment.
