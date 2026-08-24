@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
 from database.models import Game as DatabaseGame
 from database.models import Play as DatabasePlay
 from models.play import Play as DomainPlay
-
+from models.game_play_stats import GamePlayStats
 
 class PlayRepository:
     def __init__(self, db: Session):
@@ -88,3 +88,42 @@ class PlayRepository:
         self.db.commit()
 
         return True
+
+    def get_game_play_stats(
+        self,
+    ) -> dict[int, GamePlayStats]:
+        rows = (
+            self.db.query(
+                DatabaseGame.bgg_id,
+                func.count(DatabasePlay.id).label(
+                    "play_count"
+                ),
+                func.max(
+                    DatabasePlay.played_at
+                ).label(
+                    "last_played_at"
+                ),
+            )
+            .outerjoin(
+                DatabasePlay,
+                DatabasePlay.game_id
+                == DatabaseGame.id,
+            )
+            .filter(
+                DatabaseGame.owned.is_(True)
+            )
+            .group_by(
+                DatabaseGame.id,
+                DatabaseGame.bgg_id,
+            )
+            .all()
+        )
+
+        return {
+            row.bgg_id: GamePlayStats(
+                bgg_id=row.bgg_id,
+                play_count=row.play_count,
+                last_played_at=row.last_played_at,
+            )
+            for row in rows
+        }

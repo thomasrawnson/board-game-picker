@@ -21,13 +21,22 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.add_middleware(
+""" app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://192.168.68.105:5173",
     ],
     allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+) """
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -162,6 +171,11 @@ def delete_game(
         "message": "Game deleted"
     }
 
+def get_picker_play_repository(
+    db: Session = Depends(get_db),
+) -> PlayRepository:
+    return PlayRepository(db)
+
 @app.get("/picker")
 def pick_games(
     players: int = Query(..., ge=1),
@@ -169,10 +183,13 @@ def pick_games(
     max_complexity: float | None = Query(None, ge=0),
     limit: int = Query(10, ge=1, le=50),
     game_service: GameService = Depends(get_game_service),
+    play_repository: PlayRepository = Depends(get_picker_play_repository),
 ):
     games = game_service.get_games()
 
     picker_service = PickerService()
+
+    play_stats = (play_repository.get_game_play_stats())   
 
     matches = picker_service.rank_matches(
         games,
@@ -181,6 +198,7 @@ def pick_games(
             max_play_time=max_play_time,
             max_complexity=max_complexity,
         ),
+        play_stats=play_stats
     )
 
     return [
