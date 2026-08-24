@@ -13,7 +13,8 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from api.schemas.play import PlayCreate
 from repositories.play_repository import PlayRepository
-
+from repositories.insights_repository import InsightsRepository
+from services.insights_service import InsightsService
 
 app = FastAPI(
     title="BoardGamePicker API",
@@ -214,3 +215,15 @@ def record_play(
         )
 
     return play
+
+def get_insights_service(
+    db: Session = Depends(get_db),
+) -> InsightsService:
+    repository = InsightsRepository(db)
+    return InsightsService(repository)
+
+@app.get("/insights")
+def get_collection_insights(
+    service: InsightsService = Depends(get_insights_service),
+):
+    return service.get_collection_insights()
