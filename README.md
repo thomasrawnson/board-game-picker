@@ -4,6 +4,8 @@ Board Game Picker is a mobile-first application for answering a familiar game-ni
 
 The application imports a board game collection, stores game and play-history data in PostgreSQL, and recommends suitable games based on player count, available play time, complexity and recent play history.
 
+The longer-term product direction expands the picker into a broader board-game collection, session-tracking and analytics application, while keeping the picker and collection experience at its core.
+
 It is also being developed as a data-engineering portfolio project, with an emphasis on ingestion, transformation, relational modelling, API design, testing and explainable recommendation logic.
 
 ## Current progress
@@ -35,6 +37,65 @@ Currently implemented:
 - automated tests across parsers, repositories, services and API endpoints
 
 Development currently uses a BG Stats export as the primary source for collection and historical play data. BoardGameGeek integration is also available for collection and metadata synchronisation.
+
+## Product direction
+
+The picker remains the main entry point, but the application is intended to grow around four connected areas:
+
+### Pick
+
+- filter the collection by player count, available time and complexity
+- rank suitable games using explainable scoring
+- use play history to surface games that have been neglected
+- improve the reveal experience and make recommendation text clearer over game artwork
+- show useful session context such as the last played date and last winner
+
+### Collection
+
+- browse and manage the owned collection
+- import games from BG Stats
+- import and synchronise games from BoardGameGeek
+- add games manually
+- retain richer metadata including designers, publishers, categories and mechanics
+
+### Play
+
+- record game sessions rather than only aggregate player counts
+- create reusable player names or aliases
+- record which players participated in each session
+- record winners and player scores
+- retain session date, duration and other useful play metadata
+- import participant-level historical data from BG Stats where available
+
+The planned relational model will evolve toward a structure such as:
+
+```text
+games
+players
+plays
+play_participants
+```
+
+`play_participants` will associate players with individual sessions and provide a natural place for participant-specific values such as score and winner status. This structure will support player-level analytics without overloading the existing `plays` table.
+
+### Insights
+
+The analytics area is intended to support time-based, game-based, collection-based and player-based views, including examples such as:
+
+- most played games
+- most played games by month, year and all time
+- total plays by month and year
+- most successful games for a selected player
+- player win counts and win rates
+- head-to-head player statistics
+- last winner for a game
+- games not played recently
+- collection utilisation
+- most represented designers
+- most represented publishers
+- category and mechanic distributions
+
+Ranked views will support top-N questions such as top 10 most played games or the games a selected player has won most often.
 
 ## Architecture
 
@@ -109,6 +170,8 @@ The collection importer filters the export to currently owned games and uses the
 
 Historical plays are also idempotent: imported play UUIDs are stored with their source so repeated imports do not duplicate play records.
 
+A future import screen is intended to provide explicit choices for **BG Stats**, **BoardGameGeek**, and **manual game entry** rather than tying collection management to a single source.
+
 ## Recommendation engine
 
 The recommendation engine is deterministic and explainable rather than AI-driven.
@@ -147,6 +210,8 @@ Current insights include:
 
 Historical BG Stats plays feed the same database used by the picker, so analytics and recommendations operate from a shared source of truth.
 
+The planned player/session model will allow the same analytics layer to expand into winner, score, player, monthly, yearly, designer and publisher statistics.
+
 ## Technology stack
 
 ### Backend
@@ -174,12 +239,17 @@ Historical BG Stats plays feed the same database used by the picker, so analytic
 
 ### Planned / next
 
+- player and play-participant relational models
+- richer session recording including winners and scores
+- participant-level BG Stats ingestion
+- expanded play and collection analytics
+- designer, publisher, category and mechanic persistence
+- multi-source import UI and manual game entry
+- personal ranking and preference signals
+- similar-game discovery
 - GitHub Actions CI/CD
 - Azure deployment
-- category and mechanic persistence
-- similar-game discovery
-- personal ranking
-- richer recommendation scoring
+- production configuration and observability
 - AI-assisted natural-language game filtering
 
 ## Testing
@@ -279,18 +349,29 @@ npm run build
 
 ## Roadmap
 
-Near-term development priorities are:
+Development is organised so new product features also strengthen the underlying engineering and data model.
 
-1. Refine play-history-aware recommendation scoring
-2. Persist categories and mechanics
-3. Expand collection insights and play-history analytics
-4. Add personal ranking and preference signals
-5. Add similar-game discovery
-6. Improve frontend component structure and mobile UX
-7. Add GitHub Actions CI/CD
-8. Add production configuration and observability
-9. Deploy the frontend, API and database infrastructure to Azure
-10. Explore AI-assisted natural-language filtering
+1. **Recommendation refinement** — complete and validate play-history-aware scoring against real historical data.
+2. **Players and game sessions** — introduce `players` and `play_participants`, with Alembic migrations and repository/service coverage.
+3. **Rich play recording** — record participants, winners and scores from the application.
+4. **Historical participant ingestion** — extend BG Stats play import to populate player/session detail idempotently.
+5. **Play analytics** — add monthly, yearly and all-time views plus player wins, win rates, game rankings and head-to-head statistics.
+6. **Rich collection metadata** — persist designers, publishers, categories and mechanics using appropriate relational models.
+7. **Collection analytics** — add top designers/publishers, collection distributions, utilisation and related ranked views.
+8. **Import and collection management UX** — provide BG Stats import, BoardGameGeek sync and manual game-entry options in the frontend.
+9. **Picker and mobile UX polish** — strengthen reveal-card readability, surface last winner/history and improve mobile component structure.
+10. **Personalisation and discovery** — add personal rankings, preference signals and similar-game discovery.
+11. **Engineering and deployment** — add GitHub Actions CI/CD, production configuration, observability and Azure deployment.
+12. **Release exploration** — evaluate packaging/distribution for iOS and Android and validate the product with real users.
+13. **Optional advanced features** — explore AI-assisted natural-language filtering once the deterministic recommendation and data foundations are mature.
+
+## Potential product model
+
+The immediate priority is building a useful product rather than implementing billing. If the application develops into a public release, one possible model is to keep the core picker and collection experience free while evaluating advanced analytics and personalisation as optional premium functionality.
+
+Potential free functionality could include collection management, importing, the basic picker, game reveals and basic play recording. Potential premium functionality could include deeper player analytics, win/loss history, head-to-head statistics, advanced trends, richer collection analytics and advanced recommendation preferences.
+
+This is a product direction rather than a committed pricing model; monetisation will only be considered after the core experience is useful and validated.
 
 ## Project goals
 
@@ -310,6 +391,7 @@ The project is intended to demonstrate practical experience with:
 - Docker-based development
 - explainable recommendation logic
 - React and TypeScript frontend integration
+- analytical data modelling for game, session and player-level reporting
 - CI/CD and cloud deployment as later milestones
 
 ## Status
@@ -318,4 +400,4 @@ The project is intended to demonstrate practical experience with:
 
 The core application is functional end to end: collection ingestion, PostgreSQL persistence, recommendation, play tracking and collection insights are implemented.
 
-Current development is focused on improving recommendation quality, strengthening the mobile experience, and preparing the project for CI/CD and Azure deployment.
+Current development is focused on recommendation refinement before expanding the data model to support players, richer game sessions and participant-level analytics. The longer-term direction is a release-capable board-game collection, picker, play-tracking and analytics application.
