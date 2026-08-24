@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -55,6 +56,14 @@ class Game(Base):
 class Play(Base):
     __tablename__ = "plays"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "source",
+            "source_play_id",
+            name="uq_plays_source_play_id",
+        ),
+    )
+
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
@@ -75,4 +84,18 @@ class Play(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    duration_minutes: Mapped[int | None] = mapped_column(
+        Integer,
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="app",
+    )
+
+    source_play_id: Mapped[str | None] = mapped_column(
+        String(100),
     )

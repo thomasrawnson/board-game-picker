@@ -38,3 +38,53 @@ class PlayRepository:
             player_count=database_play.player_count,
             played_at=database_play.played_at,
         )
+
+    def exists_by_source_play_id(
+        self,
+        source: str,
+        source_play_id: str,
+    ) -> bool:
+        return (
+            self.db.query(DatabasePlay.id)
+            .filter(
+                DatabasePlay.source == source,
+                DatabasePlay.source_play_id
+                == source_play_id,
+            )
+            .first()
+            is not None
+        )
+
+    def create_imported(
+        self,
+        bgg_id: int,
+        player_count: int,
+        played_at,
+        duration_minutes: int | None,
+        source: str,
+        source_play_id: str,
+    ) -> bool:
+        database_game = (
+            self.db.query(DatabaseGame)
+            .filter(
+                DatabaseGame.bgg_id == bgg_id
+            )
+            .first()
+        )
+
+        if database_game is None:
+            return False
+
+        database_play = DatabasePlay(
+            game_id=database_game.id,
+            player_count=player_count,
+            played_at=played_at,
+            duration_minutes=duration_minutes,
+            source=source,
+            source_play_id=source_play_id,
+        )
+
+        self.db.add(database_play)
+        self.db.commit()
+
+        return True

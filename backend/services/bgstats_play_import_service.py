@@ -1,0 +1,72 @@
+from dataclasses import dataclass
+
+from bgstats.play_parser import parse_bgstats_plays
+from repositories.play_repository import PlayRepository
+
+
+@dataclass(frozen=True)
+class BGStatsPlayImportResult:
+    imported: int
+    skipped_existing: int
+    skipped_missing_game: int
+
+
+class BGStatsPlayImportService:
+    def __init__(
+        self,
+        repository: PlayRepository,
+    ):
+        self.repository = repository
+
+    def import_plays(
+        self,
+        json_text: str,
+    ) -> BGStatsPlayImportResult:
+        plays = parse_bgstats_plays(json_text)
+
+        imported = 0
+        skipped_existing = 0
+        skipped_missing_game = 0
+
+        for play in plays:
+            if (
+                self.repository
+                .exists_by_source_play_id(
+                    source="bgstats",
+                    source_play_id=(
+                        play.source_play_id
+                    ),
+                )
+            ):
+                skipped_existing += 1
+                continue
+
+            created = (
+                self.repository.create_imported(
+                    bgg_id=play.bgg_id,
+                    player_count=(
+                        play.player_count
+                    ),
+                    played_at=play.played_at,
+                    duration_minutes=(
+                        play.duration_minutes
+                    ),
+                    source="bgstats",
+                    source_play_id=(
+                        play.source_play_id
+                    ),
+                )
+            )
+
+            if created:
+                imported += 1
+            else:
+                skipped_missing_game += 1
+
+        return BGStatsPlayImportResult(
+            imported=imported,
+            skipped_existing=skipped_existing,
+            skipped_missing_game=(
+                skipped_missing_game
+            ),
+        )
