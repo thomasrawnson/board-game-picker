@@ -87,3 +87,37 @@ export async function recordPlay(
 
   return response.json()
 }
+
+export interface GamePlaySummary {
+  bgg_id: number
+  name: string
+  play_count: number
+}
+
+export interface LastPlayedGame {
+  bgg_id: number
+  name: string
+  played_at: string
+}
+
+export interface CollectionInsights {
+  total_games: number
+  total_plays: number
+  most_played: GamePlaySummary | null
+  last_played: LastPlayedGame | null
+  never_played_count: number
+}
+
+export async function getCollectionInsights(): Promise<CollectionInsights> {
+  const response = await fetch(
+    `${API_BASE_URL}/insights`,
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      `Insights request failed: ${response.status}`,
+    )
+  }
+
+  return response.json()
+}

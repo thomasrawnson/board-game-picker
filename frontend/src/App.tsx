@@ -1,15 +1,22 @@
 import { useState } from "react"
+
 import {
   getPickerMatches,
   recordPlay,
   type PickerMatch,
 } from "./api/client"
 
+import InsightsView from "./components/InsightsView"
+
 import "./App.css"
 
+
 type Step = "players" | "time" | "reveal"
+type AppView = "picker" | "insights"
+
 
 const playerOptions = [2, 3, 4, 5, 6, 7]
+
 
 const timeOptions = [
   {
@@ -34,22 +41,44 @@ const timeOptions = [
   },
 ]
 
+
 function App() {
-  const [step, setStep] = useState<Step>("players")
-  const [players, setPlayers] = useState<number | null>(null)
-  const [maxPlayTime, setMaxPlayTime] = useState<
-    number | undefined
-  >(undefined)
+  const [view, setView] =
+    useState<AppView>("picker")
 
-  const [matches, setMatches] = useState<PickerMatch[]>([])
-  const [matchIndex, setMatchIndex] = useState(0)
+  const [step, setStep] =
+    useState<Step>("players")
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [players, setPlayers] =
+    useState<number | null>(null)
 
-  const [savingPlay, setSavingPlay] = useState(false)
-  const [playRecorded, setPlayRecorded] = useState(false)
-  const [playError, setPlayError] = useState("")
+  const [maxPlayTime, setMaxPlayTime] =
+    useState<number | undefined>(undefined)
+
+  const [matches, setMatches] =
+    useState<PickerMatch[]>([])
+
+  const [matchIndex, setMatchIndex] =
+    useState(0)
+
+  const [loading, setLoading] =
+    useState(false)
+
+  const [error, setError] =
+    useState("")
+
+  const [savingPlay, setSavingPlay] =
+    useState(false)
+
+  const [playRecorded, setPlayRecorded] =
+    useState(false)
+
+  const [playError, setPlayError] =
+    useState("")
+
+
+  const match = matches[matchIndex]
+
 
   async function revealGame() {
     if (players === null) {
@@ -58,6 +87,8 @@ function App() {
 
     setLoading(true)
     setError("")
+    setPlayRecorded(false)
+    setPlayError("")
 
     try {
       const results = await getPickerMatches({
@@ -86,6 +117,7 @@ function App() {
     }
   }
 
+
   async function handlePlayThis() {
     if (!match || players === null) {
       return
@@ -113,236 +145,380 @@ function App() {
   }
 
 
-function tryAnother() {
-  if (matches.length === 0) {
-    return
+  function tryAnother() {
+    if (matches.length === 0) {
+      return
+    }
+
+    setPlayRecorded(false)
+    setPlayError("")
+
+    setMatchIndex(
+      (current) =>
+        (current + 1) % matches.length,
+    )
   }
 
-  setPlayRecorded(false)
-  setPlayError("")
 
-  setMatchIndex(
-    (current) => (current + 1) % matches.length,
-  )
-}
+  function startOver() {
+    setStep("players")
+    setMatches([])
+    setMatchIndex(0)
+    setPlayRecorded(false)
+    setPlayError("")
+    setError("")
+  }
 
-  const match = matches[matchIndex]
 
   return (
     <main className="app-shell">
       <section className="phone">
-        <div className="progress-dots">
-          <span
+        <nav className="app-nav">
+          <button
             className={
-              step === "players" ? "dot active" : "dot"
+              view === "picker"
+                ? "nav-button active"
+                : "nav-button"
             }
-          />
-          <span
+            onClick={() => setView("picker")}
+          >
+            Picker
+          </button>
+
+          <button
             className={
-              step === "time" ? "dot active" : "dot"
+              view === "insights"
+                ? "nav-button active"
+                : "nav-button"
             }
-          />
-          <span
-            className={
-              step === "reveal" ? "dot active" : "dot"
-            }
-          />
-        </div>
+            onClick={() => setView("insights")}
+          >
+            Your shelf
+          </button>
+        </nav>
 
-        {step === "players" && (
-          <section className="screen">
-            <header>
-              <p className="eyebrow">Game night</p>
 
-              <h1>Who's playing?</h1>
+        {view === "picker" && (
+          <>
+            <div className="progress-dots">
+              <span
+                className={
+                  step === "players"
+                    ? "dot active"
+                    : "dot"
+                }
+              />
 
-              <p className="subtitle">
-                Pick a number, we'll do the rest.
-              </p>
-            </header>
+              <span
+                className={
+                  step === "time"
+                    ? "dot active"
+                    : "dot"
+                }
+              />
 
-            <div className="player-grid">
-              {playerOptions.map((option) => (
+              <span
+                className={
+                  step === "reveal"
+                    ? "dot active"
+                    : "dot"
+                }
+              />
+            </div>
+
+
+            {step === "players" && (
+              <section className="screen">
+                <header>
+                  <p className="eyebrow">
+                    Game night
+                  </p>
+
+                  <h1>Who's playing?</h1>
+
+                  <p className="subtitle">
+                    Pick a number, we'll do the rest.
+                  </p>
+                </header>
+
+
+                <div className="player-grid">
+                  {playerOptions.map((option) => (
+                    <button
+                      key={option}
+                      className={
+                        players === option
+                          ? "player-chip selected"
+                          : "player-chip"
+                      }
+                      onClick={() =>
+                        setPlayers(option)
+                      }
+                    >
+                      <strong>
+                        {option === 7
+                          ? "7+"
+                          : option}
+                      </strong>
+
+                      <span>
+                        Players
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+
                 <button
-                  key={option}
-                  className={
-                    players === option
-                      ? "player-chip selected"
-                      : "player-chip"
+                  className="primary-button"
+                  disabled={players === null}
+                  onClick={() =>
+                    setStep("time")
                   }
-                  onClick={() => setPlayers(option)}
                 >
-                  <strong>
-                    {option === 7 ? "7+" : option}
-                  </strong>
-
-                  <span>Players</span>
+                  Continue
                 </button>
-              ))}
-            </div>
-
-            <button
-              className="primary-button"
-              disabled={players === null}
-              onClick={() => setStep("time")}
-            >
-              Continue
-            </button>
-          </section>
-        )}
-
-        {step === "time" && (
-          <section className="screen">
-            <header>
-              <p className="eyebrow">Game night</p>
-
-              <h1>How long you got?</h1>
-
-              <p className="subtitle">
-                We'll only show games that fit.
-              </p>
-            </header>
-
-            <div className="time-list">
-              {timeOptions.map((option) => {
-                const selected =
-                  maxPlayTime === option.value
-
-                return (
-                  <button
-                    key={option.label}
-                    className={
-                      selected
-                        ? "time-option selected"
-                        : "time-option"
-                    }
-                    onClick={() =>
-                      setMaxPlayTime(option.value)
-                    }
-                  >
-                    <strong>{option.label}</strong>
-
-                    <span>{option.description}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {error && (
-              <p className="error-message">{error}</p>
+              </section>
             )}
 
-            <button
-              className="primary-button"
-              onClick={revealGame}
-              disabled={loading}
-            >
-              {loading
-                ? "Searching the shelf..."
-                : "Reveal a game"}
-            </button>
 
-            <button
-              className="ghost-button"
-              onClick={() => setStep("players")}
-            >
-              Back
-            </button>
-          </section>
+            {step === "time" && (
+              <section className="screen">
+                <header>
+                  <p className="eyebrow">
+                    Game night
+                  </p>
+
+                  <h1>
+                    How long you got?
+                  </h1>
+
+                  <p className="subtitle">
+                    We'll only show games that fit.
+                  </p>
+                </header>
+
+
+                <div className="time-list">
+                  {timeOptions.map((option) => {
+                    const selected =
+                      maxPlayTime ===
+                      option.value
+
+                    return (
+                      <button
+                        key={option.label}
+                        className={
+                          selected
+                            ? "time-option selected"
+                            : "time-option"
+                        }
+                        onClick={() =>
+                          setMaxPlayTime(
+                            option.value,
+                          )
+                        }
+                      >
+                        <strong>
+                          {option.label}
+                        </strong>
+
+                        <span>
+                          {
+                            option.description
+                          }
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+
+                {error && (
+                  <p className="error-message">
+                    {error}
+                  </p>
+                )}
+
+
+                <button
+                  className="primary-button"
+                  onClick={revealGame}
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Searching the shelf..."
+                    : "Reveal a game"}
+                </button>
+
+
+                <button
+                  className="ghost-button"
+                  onClick={() =>
+                    setStep("players")
+                  }
+                >
+                  Back
+                </button>
+              </section>
+            )}
+
+
+            {step === "reveal" && match && (
+              <section className="screen reveal-screen">
+                <div
+                  className="game-card"
+                  key={match.game.bgg_id}
+                >
+                  <div className="game-image-wrap">
+                    {match.game.image_url ||
+                    match.game.thumbnail_url ? (
+                      <img
+                        className="game-image"
+                        src={
+                          match.game.image_url ??
+                          match.game.thumbnail_url ??
+                          ""
+                        }
+                        alt={match.game.name}
+                      />
+                    ) : (
+                      <div className="image-placeholder">
+                        ?
+                      </div>
+                    )}
+
+
+                    <div className="match-score">
+                      <strong>
+                        {match.score}
+                      </strong>
+
+                      <span>
+                        Match
+                      </span>
+                    </div>
+                  </div>
+
+
+                  <h2>
+                    {match.game.name}
+                  </h2>
+
+
+                  <div className="game-meta">
+                    {match.game.min_players !==
+                      null &&
+                      match.game.max_players !==
+                        null && (
+                        <span>
+                          {
+                            match.game
+                              .min_players
+                          }
+                          –
+                          {
+                            match.game
+                              .max_players
+                          }{" "}
+                          players
+                        </span>
+                      )}
+
+
+                    {match.game.max_play_time !==
+                      null && (
+                      <span>
+                        {match.game.min_play_time ??
+                          "?"}
+                        –
+                        {
+                          match.game
+                            .max_play_time
+                        }{" "}
+                        min
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+
+                <div className="match-reasons">
+                  {match.reasons.map(
+                    (reason) => (
+                      <p key={reason}>
+                        ✓ {reason}
+                      </p>
+                    ),
+                  )}
+                </div>
+
+
+                <p className="result-count">
+                  {matchIndex + 1} of{" "}
+                  {matches.length} matches
+                </p>
+
+
+                <div className="reveal-actions">
+                  <button
+                    className="secondary-button"
+                    onClick={tryAnother}
+                  >
+                    Try another
+                  </button>
+
+
+                  <button
+                    className="primary-button"
+                    onClick={handlePlayThis}
+                    disabled={
+                      savingPlay ||
+                      playRecorded
+                    }
+                  >
+                    {savingPlay
+                      ? "Recording..."
+                      : playRecorded
+                        ? "Play recorded"
+                        : "Play this"}
+                  </button>
+                </div>
+
+
+                {playRecorded && (
+                  <p className="play-confirmation">
+                    ✓ Added to your play history
+                  </p>
+                )}
+
+
+                {playError && (
+                  <p className="error-message">
+                    {playError}
+                  </p>
+                )}
+
+
+                <button
+                  className="ghost-button"
+                  onClick={startOver}
+                >
+                  Start over
+                </button>
+              </section>
+            )}
+          </>
         )}
 
-        {step === "reveal" && match && (
-          <section className="screen reveal-screen">
-            <div
-              className="game-card"
-              key={match.game.bgg_id}
-              >
-              <div className="game-image-wrap">
-                {match.game.image_url ||
-                match.game.thumbnail_url ? (
-                  <img
-                    className="game-image"
-                    src={
-                      match.game.image_url ??
-                      match.game.thumbnail_url ??
-                      ""
-                    }
-                    alt={match.game.name}
-                  />
-                ) : (
-                  <div className="image-placeholder">
-                    ?
-                  </div>
-                )}
 
-                <div className="match-score">
-                  <strong>{match.score}</strong>
-                  <span>Match</span>
-                </div>
-              </div>
-
-              <h2>{match.game.name}</h2>
-
-              <div className="game-meta">
-                {match.game.min_players !== null &&
-                  match.game.max_players !== null && (
-                    <span>
-                      {match.game.min_players}–
-                      {match.game.max_players} players
-                    </span>
-                  )}
-
-                {match.game.max_play_time !== null && (
-                  <span>
-                    {match.game.min_play_time ?? "?"}–
-                    {match.game.max_play_time} min
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="match-reasons">
-              {match.reasons.map((reason) => (
-                <p key={reason}>✓ {reason}</p>
-              ))}
-            </div>
-
-            <p className="result-count">
-              {matchIndex + 1} of {matches.length} matches
-            </p>
-
-            <div className="reveal-actions">
-              <button
-                className="secondary-button"
-                onClick={tryAnother}
-              >
-                Try another
-              </button>
-
-              <button
-                className="primary-button"
-                onClick={handlePlayThis}
-                disabled={savingPlay || playRecorded}
-              >
-                {savingPlay
-                  ? "Recording..."
-                  : playRecorded
-                    ? "Play recorded"
-                    : "Play this"}
-              </button>
-            </div>
-
-            <button
-              className="ghost-button"
-              onClick={() => setStep("players")}
-            >
-              Start over
-            </button>
-          </section>
+        {view === "insights" && (
+          <InsightsView />
         )}
       </section>
     </main>
   )
 }
+
 
 export default App
