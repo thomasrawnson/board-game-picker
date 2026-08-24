@@ -1,37 +1,33 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+)
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from bgg.client import BGGClient
+
 from api.schemas.game import GameCreate
+from api.schemas.play import PlayCreate
+from bgg.client import BGGClient
 from database.connection import get_db
 from models.game import Game
 from repositories.game_repository import GameRepository
-from services.game_service import GameService
-from services.collection_service import CollectionService
-from services.play_service import PlayService
-from services.picker_service import PickerCriteria, PickerService
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from api.schemas.play import PlayCreate
-from repositories.play_repository import PlayRepository
 from repositories.insights_repository import InsightsRepository
+from repositories.play_repository import PlayRepository
+from services.collection_service import CollectionService
+from services.game_service import GameService
 from services.insights_service import InsightsService
+from services.picker_service import (
+    PickerCriteria,
+    PickerService,
+)
+from services.play_service import PlayService
 
 app = FastAPI(
     title="BoardGamePicker API",
     version="0.1.0",
 )
-
-""" app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://192.168.68.105:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-) """
 
 app.add_middleware(
     CORSMiddleware,
@@ -189,7 +185,7 @@ def pick_games(
 
     picker_service = PickerService()
 
-    play_stats = (play_repository.get_game_play_stats())   
+    play_stats = play_repository.get_game_play_stats() 
 
     matches = picker_service.rank_matches(
         games,
@@ -198,7 +194,7 @@ def pick_games(
             max_play_time=max_play_time,
             max_complexity=max_complexity,
         ),
-        play_stats=play_stats
+        play_stats=play_stats,
     )
 
     return [

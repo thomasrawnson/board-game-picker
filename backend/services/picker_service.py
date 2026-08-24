@@ -1,14 +1,7 @@
 from dataclasses import dataclass
-from models.game import Game
-from datetime import (
-    datetime,
-    timedelta,
-    timezone,
-)
+from datetime import datetime, timezone
 
-from models.game_play_stats import (
-    GamePlayStats,
-)
+from models.game import Game
 
 
 @dataclass
@@ -209,65 +202,3 @@ class PickerService:
             return True
 
         return game.complexity <= max_complexity
-
-def test_game_not_played_recently_scores_higher():
-    service = PickerService()
-
-    recent_game = Game(
-        bgg_id=1,
-        name="Recent Game",
-        min_players=2,
-        max_players=4,
-        min_play_time=30,
-        max_play_time=60,
-        complexity=2.0,
-        owned=True,
-    )
-
-    neglected_game = Game(
-        bgg_id=2,
-        name="Neglected Game",
-        min_players=2,
-        max_players=4,
-        min_play_time=30,
-        max_play_time=60,
-        complexity=2.0,
-        owned=True,
-    )
-
-    now = datetime.now(timezone.utc)
-
-    play_stats = {
-        1: GamePlayStats(
-            bgg_id=1,
-            play_count=10,
-            last_played_at=(
-                now - timedelta(days=2)
-            ),
-        ),
-        2: GamePlayStats(
-            bgg_id=2,
-            play_count=3,
-            last_played_at=(
-                now - timedelta(days=200)
-            ),
-        ),
-    }
-
-    matches = service.rank_matches(
-        [recent_game, neglected_game],
-        PickerCriteria(
-            players=2,
-            max_play_time=60,
-        ),
-        play_stats=play_stats,
-    )
-
-    assert matches[0].game.name == (
-        "Neglected Game"
-    )
-
-    assert (
-        "Hasn't been played in a while"
-        in matches[0].reasons
-    )
