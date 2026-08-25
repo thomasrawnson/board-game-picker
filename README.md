@@ -1,5 +1,7 @@
 # Board Game Picker
 
+![CI](https://github.com/thomasrawnson/board-game-picker/actions/workflows/ci.yml/badge.svg)
+
 Board Game Picker is a mobile-first application that helps answer a simple question: what should we play tonight?
 
 It imports a board game collection and play history, stores the data in PostgreSQL, and recommends suitable games based on player count, available time, complexity and recent play history.
