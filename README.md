@@ -35,16 +35,16 @@ The picker ranks suitable games using session criteria and play history, and exp
 
 ```mermaid
 flowchart LR
-    A[BG Stats JSON] --> C[Parse]
-    B[BoardGameGeek XML] --> C
-    C --> D[Validate]
-    D --> E[Service Layer]
-    E --> F[(PostgreSQL)]
-    F --> G[Picker]
-    F --> H[Insights]
-    F --> I[Play History]
-    G --> J[Recommendation Scoring]
-    J --> K[React UI]
+    A["BG Stats JSON"] --> C["Parse"]
+    B["BoardGameGeek XML"] --> C
+    C --> D["Validate"]
+    D --> E["Service Layer"]
+    E --> F["PostgreSQL"]
+    F --> G["Picker"]
+    F --> H["Insights"]
+    F --> I["Play History"]
+    G --> J["Recommendation Scoring"]
+    J --> K["React UI"]
 ```
 
 Collection and play data are normalised into PostgreSQL and reused by the picker, insights and recommendation logic.
@@ -53,11 +53,12 @@ Collection and play data are normalised into PostgreSQL and reused by the picker
 
 ```mermaid
 erDiagram
+    erDiagram
     GAMES ||--o{ PLAYS : has
 
     GAMES {
         int id PK
-        int bgg_id UK
+        int bgg_id
         string name
         int year_published
         int min_players
