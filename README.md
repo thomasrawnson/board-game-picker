@@ -8,6 +8,16 @@ It imports a board game collection and play history, stores the data in PostgreS
 
 I built the project to develop practical data engineering skills around ingestion, transformation, relational modelling, APIs, testing and data-driven recommendation logic.
 
+<p align="center">
+  <img
+    src="docs/images/picker-recommendation.png"
+    alt="Board Game Picker recommending 7 Wonders Duel"
+    width="380"
+  />
+</p>
+
+The picker ranks suitable games using session criteria and play history, and explains why each game was recommended.
+
 ## Current features
 
 - Import collections and historical plays from BG Stats JSON exports
