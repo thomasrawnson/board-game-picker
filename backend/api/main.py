@@ -1,4 +1,5 @@
 from fastapi import (
+    Body,
     Depends,
     FastAPI,
     HTTPException,
@@ -24,7 +25,9 @@ from services.picker_service import (
 )
 from services.play_service import PlayService
 from services.bgstats_import_service import BGStatsImportService
+from utils.logging_config import configure_logging
 
+configure_logging()
 app = FastAPI(
     title="BoardGamePicker API",
     version="0.1.0",
@@ -47,7 +50,7 @@ def get_bgstats_import_service(
 
 @app.post("/imports/bgstats")
 def import_bgstats_collection(
-    json_text: str,
+    json_text: str = Body(..., media_type="application/json"),
     service: BGStatsImportService = Depends(get_bgstats_import_service),
 ):
     result = service.import_owned_games(json_text)

@@ -451,7 +451,7 @@ def test_bgstats_import_returns_quality_report():
 
         response = client.post(
             "/imports/bgstats",
-            params={"json_text": "{}"},
+            json="{}",
         )
 
         assert response.status_code == 200
