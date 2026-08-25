@@ -172,7 +172,7 @@ alembic check
 - Extend historical BG Stats ingestion to participant data
 - Expand player and collection analytics
 - Add richer collection metadata such as designers, publishers, categories and mechanics
-- Add CI/CD and deploy the application to the cloud
+- Add deployment automation and deploy the application to the cloud
 
 ## Why I built it
 
