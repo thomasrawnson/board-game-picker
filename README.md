@@ -53,7 +53,6 @@ Collection and play data are normalised into PostgreSQL and reused by the picker
 
 ```mermaid
 erDiagram
-    erDiagram
     GAMES ||--o{ PLAYS : has
 
     GAMES {
