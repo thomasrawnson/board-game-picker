@@ -418,3 +418,56 @@ def test_record_play_returns_404_for_unknown_game():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Game not found"
+
+def test_bgstats_import_returns_quality_report():
+    from api.main import get_bgstats_import_service
+    from services.bgstats_import_service import (
+        ImportRejection,
+        ImportResult,
+    )
+
+    class FakeImportService:
+        def import_owned_games(self, json_text):
+            return ImportResult(
+                records_received=3,
+                inserted=1,
+                updated=1,
+                rejected=1,
+                rejections=[
+                    ImportRejection(
+                        bgg_id=123,
+                        name="Bad Game",
+                        reason="Missing game name",
+                    )
+                ],
+            )
+
+    app.dependency_overrides[get_bgstats_import_service] = (
+        lambda: FakeImportService()
+    )
+
+    try:
+        client = TestClient(app)
+
+        response = client.post(
+            "/imports/bgstats",
+            params={"json_text": "{}"},
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "records_received": 3,
+            "inserted": 1,
+            "updated": 1,
+            "rejected": 1,
+            "rejections": [
+                {
+                    "bgg_id": 123,
+                    "name": "Bad Game",
+                    "reason": "Missing game name",
+                }
+            ],
+        }
+
+    finally:
+        app.dependency_overrides.clear()

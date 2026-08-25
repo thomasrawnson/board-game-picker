@@ -23,6 +23,7 @@ from services.picker_service import (
     PickerService,
 )
 from services.play_service import PlayService
+from services.bgstats_import_service import BGStatsImportService
 
 app = FastAPI(
     title="BoardGamePicker API",
@@ -36,6 +37,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def get_bgstats_import_service(
+    db: Session = Depends(get_db),
+) -> BGStatsImportService:
+    return BGStatsImportService(
+        repository=GameRepository(db),
+    )
+
+@app.post("/imports/bgstats")
+def import_bgstats_collection(
+    json_text: str,
+    service: BGStatsImportService = Depends(get_bgstats_import_service),
+):
+    result = service.import_owned_games(json_text)
+
+    return {
+        "records_received": result.records_received,
+        "inserted": result.inserted,
+        "updated": result.updated,
+        "rejected": result.rejected,
+        "rejections": [
+            {
+                "bgg_id": rejection.bgg_id,
+                "name": rejection.name,
+                "reason": rejection.reason,
+            }
+            for rejection in result.rejections
+        ],
+    }
 
 def get_collection_service(
     db: Session = Depends(get_db),
