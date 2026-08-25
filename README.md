@@ -23,18 +23,56 @@ I built the project to develop practical data engineering skills around ingestio
 
 ## Architecture
 
-```text
-BG Stats JSON ----\
-                  > Parsers / import services -> PostgreSQL
-BoardGameGeek ----/                            |
-                                               v
-React PWA <-> FastAPI <-> Services <-> Repositories
-                         |
-                         v
-                 Recommendation / Insights
+```mermaid
+flowchart LR
+    A[BG Stats JSON] --> C[Parse]
+    B[BoardGameGeek XML] --> C
+    C --> D[Validate]
+    D --> E[Service Layer]
+    E --> F[(PostgreSQL)]
+    F --> G[Picker]
+    F --> H[Insights]
+    F --> I[Play History]
+    G --> J[Recommendation Scoring]
+    J --> K[React UI]
 ```
 
-The backend separates API, service and repository layers so business logic is not tied directly to HTTP or database code.
+Collection and play data are normalised into PostgreSQL and reused by the picker, insights and recommendation logic.
+
+### Database model
+
+```mermaid
+erDiagram
+    GAMES ||--o{ PLAYS : has
+
+    GAMES {
+        int id PK
+        int bgg_id UK
+        string name
+        int year_published
+        int min_players
+        int max_players
+        int min_play_time
+        int max_play_time
+        float complexity
+        float rating
+        boolean owned
+        string image_url
+        string thumbnail_url
+    }
+
+    PLAYS {
+        int id PK
+        int game_id FK
+        int player_count
+        datetime played_at
+        int duration_minutes
+        string source
+        string source_play_id
+    }
+```
+
+The backend separates API, service and repository layers so business logic is not tied directly to HTTP or database code. Historical plays use a unique source and source play ID combination so repeated imports do not create duplicates.
 
 ## Data flow
 
